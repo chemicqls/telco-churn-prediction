@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Raw data files -- don't commit large datasets, link to source in README instead
+*.csv
