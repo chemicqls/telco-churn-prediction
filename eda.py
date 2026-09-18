@@ -48,3 +48,49 @@ print(two_year["Churn"].value_counts(normalize=True))
 print("\nSame result using groupby:")
 churn_by_contract = df.groupby("Contract")["Churn"].value_counts(normalize=True)
 print(churn_by_contract)
+
+# -----------------------------------------------------------------
+# 6. Does tenure affect churn? Testing the hypothesis: newer customers
+#    churn more because long-time customers have built up loyalty.
+# -----------------------------------------------------------------
+# Step 1: build the mask -- True for customers who've been here 12 months or less
+mask_new = df["tenure"] <= 12
+
+# Step 2: filter df down to just those customers
+new_customers = df[mask_new]
+
+print("\nCustomers with tenure <= 12 months:", len(new_customers))
+print(new_customers["Churn"].value_counts(normalize=True))
+
+# Now the opposite group: customers here MORE than 12 months
+mask_long = df["tenure"] > 12
+long_customers = df[mask_long]
+
+print("\nCustomers with tenure > 12 months:", len(long_customers))
+print(long_customers["Churn"].value_counts(normalize=True))
+
+
+# -----------------------------------------------------------------
+# 7. Does tenure affect churn? 4-bucket breakdown
+# -----------------------------------------------------------------
+mask_bucket1 = df["tenure"] <= 12
+mask_bucket2 = (df["tenure"] > 12) & (df["tenure"] <= 24)
+mask_bucket3 = (df["tenure"] > 24) & (df["tenure"] <= 48)
+mask_bucket4 = df["tenure"] >= 49
+
+bucket1 = df[mask_bucket1]
+bucket2 = df[mask_bucket2]
+bucket3 = df[mask_bucket3]
+bucket4 = df[mask_bucket4]
+
+print("\nTenure 0-12 months:", len(bucket1))
+print(bucket1["Churn"].value_counts(normalize=True))
+
+print("\nTenure 13-24 months:", len(bucket2))
+print(bucket2["Churn"].value_counts(normalize=True))
+
+print("\nTenure 25-48 months:", len(bucket3))
+print(bucket3["Churn"].value_counts(normalize=True))
+
+print("\nTenure 49+ months:", len(bucket4))
+print(bucket4["Churn"].value_counts(normalize=True))
