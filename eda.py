@@ -11,6 +11,7 @@ import pandas as pd
 df = pd.read_csv("WA_Fn-UseC_-Telco-Customer-Churn.csv")
 df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
 df["TotalCharges"] = df["TotalCharges"].fillna(0)
+df.info()
 
 # -----------------------------------------------------------------
 # 2. Check churn rate for Month-to-month customers only
@@ -94,3 +95,40 @@ print(bucket3["Churn"].value_counts(normalize=True))
 
 print("\nTenure 49+ months:", len(bucket4))
 print(bucket4["Churn"].value_counts(normalize=True))
+
+# -----------------------------------------------------------------
+# 8. Does monthly bill affect churn?
+#    Hypothesis: higher bills -> more churn (cost sensitivity).
+# -----------------------------------------------------------------
+# Mask: True for customers paying MORE than $70/month.
+mask_high = df["MonthlyCharges"] > 70
+
+# Mask: True for customers paying $70/month or LESS.
+mask_low = df["MonthlyCharges"] <= 70
+
+# Filter df down to each group, same df[mask] pattern as before.
+high_bill = df[mask_high]
+low_bill = df[mask_low]
+
+# len() counts the rows in each filtered table.
+print("\nMonthly charges > $70:", len(high_bill))
+print(high_bill["Churn"].value_counts(normalize=True))
+
+print("\nMonthly charges <= $70:", len(low_bill))
+print(low_bill["Churn"].value_counts(normalize=True))
+
+# -----------------------------------------------------------------
+# 9. Does internet service type affect churn?
+#    Hypothesis: No internet < DSL < Fiber optic, because fiber is the
+#    most expensive plan.
+# -----------------------------------------------------------------
+# groupby("InternetService") splits the table into one group per value
+# in that column (DSL, Fiber optic, No), then value_counts(normalize=True)
+# gives the Yes/No churn percentages inside each group.
+churn_by_internet = df.groupby("InternetService")["Churn"].value_counts(normalize=True)
+print("\nChurn rate by internet service:")
+print(churn_by_internet)
+
+# Group sizes, so you can sanity-check they add up to 7,043.
+print("\nCustomers per internet service type:")
+print(df["InternetService"].value_counts())
