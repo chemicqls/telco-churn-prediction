@@ -132,3 +132,24 @@ print(churn_by_internet)
 # Group sizes, so you can sanity-check they add up to 7,043.
 print("\nCustomers per internet service type:")
 print(df["InternetService"].value_counts())
+
+# -----------------------------------------------------------------
+# 10. Does monthly bill still matter among Fiber optic customers only?
+#     Hypothesis: yes, the gap stays large, because price pushes people
+#     out even on the premium plan.
+# -----------------------------------------------------------------
+# Mask: True only where BOTH conditions are True (& = "and").
+# Each condition needs its own parentheses.
+mask_fiber_high = (df["InternetService"] == "Fiber optic") & (df["MonthlyCharges"] > 70)
+mask_fiber_low = (df["InternetService"] == "Fiber optic") & (df["MonthlyCharges"] <= 70)
+
+# Filter df down to each group, same df[mask] pattern as before.
+fiber_high = df[mask_fiber_high]
+fiber_low = df[mask_fiber_low]
+
+# Group sizes first: a churn percentage from a tiny group is unreliable.
+print("\nFiber optic, monthly charges > $70:", len(fiber_high))
+print(fiber_high["Churn"].value_counts(normalize=True))
+
+print("\nFiber optic, monthly charges <= $70:", len(fiber_low))
+print(fiber_low["Churn"].value_counts(normalize=True))
