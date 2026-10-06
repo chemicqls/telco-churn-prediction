@@ -192,3 +192,54 @@ df_encoded2 = pd.get_dummies(df_encoded, columns=text_columns, drop_first=True)
 # Expected shape: (7043, 32)
 print("\nShape after encoding everything:", df_encoded2.shape)
 print(df_encoded2.columns.tolist())
+
+# -----------------------------------------------------------------
+# 14. Final prep before modeling
+# -----------------------------------------------------------------
+# .copy() makes an independent copy, so changes below don't touch df_encoded2.
+df_model = df_encoded2.copy()
+
+# customerID is a unique label per row, not a feature. If the model saw it,
+# it could memorize individual customers instead of learning real patterns.
+# columns=[...] says "drop these columns" (the default would be rows).
+df_model = df_model.drop(columns=["customerID"])
+
+# Convert the target from text to numbers: No -> 0 (stayed), Yes -> 1 (churned).
+# .map() replaces each value using the dictionary you give it.
+df_model["Churn"] = df_model["Churn"].map({"No": 0, "Yes": 1})
+
+# Convert every True/False column into 1/0. Loop over the column names,
+# and for each boolean column, change its type to int.
+for col in df_model.columns:
+    if df_model[col].dtype == bool:
+        df_model[col] = df_model[col].astype(int)
+
+# Sanity checks: expected shape is (7043, 31), and every column should be numeric.
+print("\nShape ready for modeling:", df_model.shape)
+print("Missing values anywhere:", df_model.isna().sum().sum())
+print(df_model["Churn"].value_counts())
+df_model.info()
+
+# -----------------------------------------------------------------
+# 15. Train/test split
+# -----------------------------------------------------------------
+from sklearn.model_selection import train_test_split
+
+# X = the inputs (every column EXCEPT Churn). y = the answer we predict.
+# columns=["Churn"] tells .drop() to remove a column, not a row.
+X = df_model.drop(columns=["Churn"])
+y = df_model["Churn"]
+
+# train_test_split returns FOUR pieces, in this exact order.
+# test_size=0.2     -> hold back 20% of customers for testing
+# random_state=42   -> fixes the shuffle so you get the same split every run
+# stratify=y        -> keep the churn ratio (~26.5% Yes) the same in both
+#                      pieces, so the test set isn't accidentally skewed
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+print("\nX_train shape:", X_train.shape)
+print("X_test shape:", X_test.shape)
+print("\nChurn rate in y_train:", y_train.mean())
+print("Churn rate in y_test:", y_test.mean()) 
