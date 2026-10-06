@@ -153,3 +153,42 @@ print(fiber_high["Churn"].value_counts(normalize=True))
 
 print("\nFiber optic, monthly charges <= $70:", len(fiber_low))
 print(fiber_low["Churn"].value_counts(normalize=True))
+
+# -----------------------------------------------------------------
+# 11. One-hot encoding test (single column first)
+# -----------------------------------------------------------------
+# pd.get_dummies() returns a NEW table; df itself is unchanged.
+# columns=["Contract"]  -> only convert this text column
+# drop_first=True       -> drop one category so the flags aren't redundant
+df_encoded = pd.get_dummies(df, columns=["Contract"], drop_first=True)
+
+# Show only the columns that changed, so the output is easy to read.
+print("\nColumns after encoding Contract:")
+print(df_encoded.columns.tolist())
+print(df_encoded[["Contract_One year", "Contract_Two year"]].head())
+
+# -----------------------------------------------------------------
+# 12. One-hot encode three text columns at once
+# -----------------------------------------------------------------
+df_encoded = pd.get_dummies(df, columns=["Contract", "InternetService", "PaymentMethod"], drop_first=True)
+
+# .shape returns (rows, columns). We expect 7043 rows and 25 columns.
+print("\nShape after encoding:", df_encoded.shape)
+print(df_encoded.columns.tolist())
+
+# -----------------------------------------------------------------
+# 13. One-hot encode the remaining text columns
+# -----------------------------------------------------------------
+# Built from df_encoded (not df), so the Contract / InternetService /
+# PaymentMethod encoding from section 12 is kept.
+text_columns = [
+    "gender", "Partner", "Dependents", "PhoneService", "MultipleLines",
+    "OnlineSecurity", "OnlineBackup", "DeviceProtection", "TechSupport",
+    "StreamingTV", "StreamingMovies", "PaperlessBilling",
+]
+
+df_encoded2 = pd.get_dummies(df_encoded, columns=text_columns, drop_first=True)
+
+# Expected shape: (7043, 32)
+print("\nShape after encoding everything:", df_encoded2.shape)
+print(df_encoded2.columns.tolist())
