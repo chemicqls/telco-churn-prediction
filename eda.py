@@ -243,3 +243,76 @@ print("\nX_train shape:", X_train.shape)
 print("X_test shape:", X_test.shape)
 print("\nChurn rate in y_train:", y_train.mean())
 print("Churn rate in y_test:", y_test.mean()) 
+
+# -----------------------------------------------------------------
+# 16. Scale the numeric columns (fit on TRAIN only to avoid leakage)
+# -----------------------------------------------------------------
+from sklearn.preprocessing import StandardScaler
+
+# Only the columns with large, varied numbers. The 0/1 flag columns
+# are already on a small scale, so we leave them alone.
+numeric_cols = ["tenure", "MonthlyCharges", "TotalCharges"]
+
+# .copy() so we keep the unscaled originals untouched.
+X_train_scaled = X_train.copy()
+X_test_scaled = X_test.copy()
+
+scaler = StandardScaler()
+
+# fit_transform = learn the average/spread from X_train, then apply it to X_train.
+X_train_scaled[numeric_cols] = scaler.fit_transform(X_train[numeric_cols])
+
+# transform ONLY (no fit): reuse the averages/spreads learned from the training data.
+# Calling fit here would be the leakage mistake.
+X_test_scaled[numeric_cols] = scaler.transform(X_test[numeric_cols])
+
+# Check: train columns should be near mean 0 and std 1.
+# Test columns will be close to that, but not exactly. That is expected.
+print("\nTrain (scaled) numeric summary:")
+print(X_train_scaled[numeric_cols].describe().loc[["mean", "std"]])
+print("\nTest (scaled) numeric summary:")
+print(X_test_scaled[numeric_cols].describe().loc[["mean", "std"]])
+
+# -----------------------------------------------------------------
+# 17. Train Logistic Regression and make a first evaluation
+# -----------------------------------------------------------------
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+
+# Empty model object, weights not learned yet.
+# random_state=42 -> reproducible results
+# max_iter=1000   -> allow up to 1000 rounds of the guess-and-adjust loop
+#                    (the default is 100, which can stop before the weights settle)
+model = LogisticRegression(random_state=42, max_iter=1000)
+
+# TRAINING: runs the loop on the training customers and their real answers.
+model.fit(X_train_scaled, y_train)
+
+# PREDICTING: the model sees only the test inputs and guesses 0 or 1 for each.
+y_pred = model.predict(X_test_scaled)
+
+# Accuracy = fraction of test customers where the guess matched reality.
+accuracy = accuracy_score(y_test, y_pred)
+
+# The "lazy model" benchmark: predict "stayed" for EVERYONE.
+# y_test.mean() is the churn rate, so 1 minus it is the share who stayed.
+lazy_accuracy = 1 - y_test.mean()
+
+print("\nModel accuracy:", round(accuracy, 4))
+print("Lazy 'always stayed' accuracy:", round(lazy_accuracy, 4))
+
+# -----------------------------------------------------------------
+# 18. Confusion matrix, precision, recall, F1
+# -----------------------------------------------------------------
+from sklearn.metrics import confusion_matrix, classification_report
+
+# Rows = what really happened, columns = what the model predicted.
+# Layout: [[true neg, false pos],
+#          [false neg, true pos]]
+cm = confusion_matrix(y_test, y_pred)
+print("\nConfusion matrix:")
+print(cm)
+
+# target_names labels class 0 and class 1 in the report.
+print("\nClassification report:")
+print(classification_report(y_test, y_pred, target_names=["Stayed", "Churned"]))
